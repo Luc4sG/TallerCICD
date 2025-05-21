@@ -1,0 +1,51 @@
+name: Trello Sync Completo
+
+on:
+  # Para empujar ramas feature/*
+  push:
+    branches:
+      - 'feature/*'
+  # Para cerrar PRs en develop
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+
+jobs:
+  to-in-progress:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extraer shortLink de la rama
+        id: ext
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          SHORT=$(echo "$BRANCH" | grep -oE '[A-Za-z0-9]{6}')
+          echo "::set-output name=card_short::$SHORT"
+
+      - name: Mover tarjeta a “En proceso” 
+        run: |
+          curl -s -X PUT \
+            "https://api.trello.com/1/cards/${{ steps.ext.outputs.card_short }}" \
+            "?key=${{ secrets.TRELLO_API_KEY }}" \
+            "&token=${{ secrets.TRELLO_API_TOKEN }}" \
+            "&idList=${{ secrets.TRELLO_LIST_IN_PROGRESS_ID }}" \
+          || exit 1
+
+  to-done:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mover tarjeta a “Hecho” 
+        uses: Yleisradio/github-action-trello-integration@v1.1.1
+        with:
+          action: pull_request_event_move_card
+        env:
+          GITHUB_TOKEN:         ${{ secrets.GITHUB_TOKEN }}
+          TRELLO_API_KEY:       ${{ secrets.TRELLO_API_KEY }}
+          TRELLO_API_TOKEN:     ${{ secrets.TRELLO_API_TOKEN }}
+          TRELLO_BOARD_ID:      ${{ secrets.TRELLO_BOARD_ID }}
+          TRELLO_SOURCE_LIST_ID: ${{ secrets.TRELLO_LIST_IN_PROGRESS_ID }}
+          TRELLO_TARGET_LIST_ID: ${{ secrets.TRELLO_LIST_DONE_ID }}
