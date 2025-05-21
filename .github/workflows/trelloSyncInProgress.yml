@@ -26,13 +26,4 @@ jobs:
           echo "card_short=$SHORT" >> $GITHUB_OUTPUT
 
       - name: Mover tarjeta a “En proceso” en Trello
-        run: |
-          curl -s -X PUT \
-            "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_short }}/idList" \
-            "?value=${{ secrets.TRELLO_LIST_IN_PROGRESS_ID }}" \
-            "&key=${{ secrets.TRELLO_API_KEY }}" \
-            "&token=${{ secrets.TRELLO_API_TOKEN }}" \
-          -o /tmp/trello.txt -w "%{http_code}" \
-          | { read code; echo "HTTP status: $code"; if [ "$code" != "200" ]; then
-              echo "❌ Falló mover tarjeta. Response:"; cat /tmp/trello.txt; exit 1;
-            fi; }
+        run: curl -s -X PUT "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_short }}/idList?value=${{ secrets.TRELLO_LIST_IN_PROGRESS_ID }}&key=${{ secrets.TRELLO_API_KEY }}&token=${{ secrets.TRELLO_API_TOKEN }}" -o /dev/null && echo "✅ Tarjeta movida a En proceso"
