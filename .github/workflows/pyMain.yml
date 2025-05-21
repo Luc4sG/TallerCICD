@@ -38,6 +38,28 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
 
+  deploy:
+      name: Deploy
+      needs: [run-tests] 
+      runs-on: ubuntu-22.04
+      steps:
+        - name: Deploy to production
+          uses: johnbeynon/render-deploy-action@v0.0.8
+          with:
+            service-id: ${{ secrets.SERVICE_ID}}
+            api-key: ${{ secrets.RENDER_API_KEY}}
+        - name: Send Slack notification
+          uses: ravsamhq/notify-slack-action@v2
+          if: always()
+          with:
+                status: ${{ job.status }}
+                token: ${{ secrets.GITHUB_TOKEN }}
+                notification_title: "{workflow} has {status_message}"
+                message_format: "{emoji} Deploy {status_message} in <{repo_url}|{repo}>"
+                footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+                notify_when: "failure, success"
+          env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
 
 # name: python app
 # on:
