@@ -34,6 +34,7 @@ jobs:
           status: ${{ job.status }}
           token: ${{ secrets.GH_PAT }}
           notification_title: "CI Result"
+          #review message 
           message_format: ":mag: CI on *${{ github.ref_name }}* finished with *${{ job.status }}*"
           notify_when: "failure, success"
         env:
