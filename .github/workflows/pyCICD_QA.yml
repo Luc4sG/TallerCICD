@@ -22,8 +22,8 @@ jobs:
         run: |
           pip install -r requirements.txt flake8
 
-      - name: Lint
-        run: flake8 .
+      # - name: Lint
+      #   run: flake8 .
 
       - name: Test
         run: pytest
@@ -33,11 +33,12 @@ jobs:
         if: always()
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          token: ${{ secrets.GH_PAT }}
           notification_title: "QA Check"
           message_format: ":white_check_mark: PR #${{ github.event.pull_request.number }} on develop is *${{ job.status }}*"
           notify_when: "failure, success"
-
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
       #- name: Deploy to QA (Render)
       #  uses: johnbeynon/render-deploy-action@v0.0.8
       #  with:

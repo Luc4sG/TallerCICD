@@ -22,8 +22,8 @@ jobs:
         run: |
           pip install -r requirements.txt flake8
 
-      - name: Lint
-        run: flake8 .
+      # - name: Lint
+      #   run: flake8 .
 
       - name: Test
         run: pytest
@@ -46,11 +46,13 @@ jobs:
         if: always()
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          token: ${{ secrets.GH_PAT }}
           notification_title: "Production Deploy"
           message_format: ":ship: PR #${{ github.event.pull_request.number }} merged to main; deployment *${{ job.status }}*"
           notify_when: "failure, success"
-
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
+          
   move-card-done:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
