@@ -1,0 +1,38 @@
+name: CI Feature Branch
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies & flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt flake8
+
+      - name: Lint
+        run: flake8 .
+
+      - name: Test
+        run: pytest
+
+      - name: Slack notification
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          notification_title: "CI Result"
+          message_format: ":mag: CI on `${GITHUB_REF#refs/heads/}` finished with *${{ job.status }}*"
+          notify_when: "failure, success"

@@ -1,0 +1,70 @@
+name: Deploy Production & Trello Done
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  production-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deps & flake8
+        run: |
+          pip install -r requirements.txt flake8
+
+      - name: Lint
+        run: flake8 .
+
+      - name: Test
+        run: pytest
+
+      # - name: SonarCloud Scan
+      #   uses: SonarSource/sonarcloud-github-action@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
+
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.SERVICE_ID }}
+          api-key:    ${{ secrets.RENDER_API_KEY }}
+          wait-for-success: true
+
+      - name: Slack notification
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          notification_title: "Production Deploy"
+          message_format: ":ship: PR #${{ github.event.pull_request.number }} merged to main; deployment *${{ job.status }}*"
+          notify_when: "failure, success"
+
+  move-card-done:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    needs: [production-deploy]
+    steps:
+      - name: Extract card shortLink
+        id: extract
+        run: |
+          REF=${{ github.event.pull_request.head.ref }}
+          SHORT=${REF#feature/}
+          SHORT=${SHORT%%-*}
+          echo "card_short=$SHORT" >> $GITHUB_OUTPUT
+
+      - name: Move Trello card to Done
+        run: |
+          curl -s -X PUT "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_short }}/idList?value=${{ secrets.TRELLO_LIST_DONE_ID }}&key=${{ secrets.TRELLO_API_KEY }}&token=${{ secrets.TRELLO_API_TOKEN }}" -o /dev/null \
+          && echo "✅ Trello card ${{ steps.extract.outputs.card_short }} moved to Done"

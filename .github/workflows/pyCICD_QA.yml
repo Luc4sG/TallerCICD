@@ -1,0 +1,55 @@
+name: QA Pipeline Develop
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [opened, reopened, synchronize, closed]
+
+jobs:
+  qa:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deps & flake8
+        run: |
+          pip install -r requirements.txt flake8
+
+      - name: Lint
+        run: flake8 .
+
+      - name: Test
+        run: pytest
+
+      - name: Slack notification
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          notification_title: "QA Check"
+          message_format: ":white_check_mark: PR #${{ github.event.pull_request.number }} on develop is *${{ job.status }}*"
+          notify_when: "failure, success"
+
+      #- name: Deploy to QA (Render)
+      #  uses: johnbeynon/render-deploy-action@v0.0.8
+      #  with:
+      #    service-id: ${{ secrets.QA_SERVICE_ID }}
+      #    api-key: ${{ secrets.RENDER_API_KEY }}
+      #
+      #- name: Slack QA deploy notification
+      #  uses: ravsamhq/notify-slack-action@v2
+      #  if: always()
+      #  with:
+      #    status: ${{ job.status }}
+      #    token: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #    notification_title: "QA Deploy"
+      #    message_format: ":rocket: QA deploy for PR #${{ github.event.pull_request.number }} finished *${{ job.status }}*"
+      #    notify_when: "failure, success"
