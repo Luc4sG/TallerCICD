@@ -34,7 +34,7 @@ jobs:
           status: ${{ job.status }}
           token: ${{ secrets.GH_PAT }}
           notification_title: "CI Result"
-          message_format: ":mag: CI on `${GITHUB_REF#refs/heads/}` finished with *${{ job.status }}*"
+          message_format: ":mag: CI on *${{ github.ref_name }}* finished with *${{ job.status }}*"
           notify_when: "failure, success"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}

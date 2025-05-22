@@ -52,6 +52,7 @@ jobs:
           notify_when: "failure, success"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
+          
   move-card-done:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
