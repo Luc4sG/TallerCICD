@@ -32,7 +32,9 @@ jobs:
         if: always()
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          token: ${{ secrets.GH_PAT }}
           notification_title: "CI Result"
           message_format: ":mag: CI on `${GITHUB_REF#refs/heads/}` finished with *${{ job.status }}*"
           notify_when: "failure, success"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}

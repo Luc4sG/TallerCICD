@@ -25,7 +25,9 @@ jobs:
         if: always()
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          token: ${{ secrets.GH_PAT }}
           notification_title: "Trello Update"
           message_format: ":arrow_forward: Branch `${GITHUB_REF#refs/heads/}` created—card *${{ steps.extract.outputs.card_short }}* moved to In Progress"
           notify_when: "success"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL}}
