@@ -1,0 +1,31 @@
+name: Trello Move Card to In Progress
+
+on:
+  create:
+    ref_type: branch
+
+jobs:
+  move-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract card shortLink
+        id: extract
+        run: |
+          SHORT=${GITHUB_REF#refs/heads/feature/}
+          SHORT=${SHORT%%-*}
+          echo "card_short=$SHORT" >> $GITHUB_OUTPUT
+
+      - name: Move Trello card to In Progress
+        run: |
+          curl -s -X PUT "https://api.trello.com/1/cards/${{ steps.extract.outputs.card_short }}/idList?value=${{ secrets.TRELLO_LIST_IN_PROGRESS_ID }}&key=${{ secrets.TRELLO_API_KEY }}&token=${{ secrets.TRELLO_API_TOKEN }}" -o /dev/null \
+          && echo "✅ Trello card ${{ steps.extract.outputs.card_short }} moved to In Progress"
+
+      - name: Slack notification
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.SLACK_WEBHOOK_URL }}
+          notification_title: "Trello Update"
+          message_format: ":arrow_forward: Branch `${GITHUB_REF#refs/heads/}` created—card *${{ steps.extract.outputs.card_short }}* moved to In Progress"
+          notify_when: "success"
